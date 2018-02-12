@@ -19,10 +19,12 @@ import java.util.regex.Pattern;
  */
 public class SuperClient implements Runnable {
 
-	private static String ip = "localhost";
-	private static int port = 8511;
+	private static String IP = "localhost";
+	private static int PORT = 8511;
 	
 	static int BUFFER_SIZE=1024*51;
+	static int INTERVAL=100; // in  the span of the connection creation, control the speed (Milli-Sec)
+	static int TTL=1000*30;  // The duration of one connection (Milli-Sec) 
 
 	SocketChannel socketChannel;
 
@@ -40,21 +42,27 @@ public class SuperClient implements Runnable {
 
 	public static void main(String[] args) throws UnknownHostException, IOException {
 
-		if (args.length == 2) {
-			ip = args[0];
-			port = new Integer(args[1]);
+		if (args.length == 4) {
+			IP = args[0];
+			
+			// on purpose to demo different ways to transfer Str to Int
+			PORT = new Integer(args[1]); 
+			INTERVAL = Integer.parseInt(args[2]);
+			TTL=Integer.parseInt(args[3]);
+			
 		} else {
-
-			Util.loger(" Usage: {ip} {port}");
-			Util.loger("Current ip and port :" + ip + " " + port);
+			Util.loger(" Usage: {IP} {PORT} {INTERVAL} {TTL}");
+			Util.loger("Current ip and port :" + IP + " " + PORT);
+			
+			return;
 		}
 
 		Pattern pattern = Pattern.compile(IPADDRESS_PATTERN); // seems complex pattern should compile first;
-		boolean validatedIP = pattern.matcher(ip).matches();
+		boolean validatedIP = pattern.matcher(IP).matches();
 		// or another way
-		validatedIP = Pattern.matches(IPADDRESS_PATTERN, ip);
+		validatedIP = Pattern.matches(IPADDRESS_PATTERN, IP);
 
-		if (!validatedIP && !ip.equals("localhost")) {
+		if (!validatedIP && !IP.equals("localhost")) {
 			Util.loger("Invalidate IP format...");
 			System.exit(-1);
 		}
@@ -66,23 +74,23 @@ public class SuperClient implements Runnable {
 			t.start();
 			
 			// Give interval for next threads in milli-seconds
-			Util.setTimer(3000);
+			Util.setTimer(INTERVAL);
 		}
 
 	}
 
 	void connect() throws UnknownHostException, IOException {
 
-		if (null == ip || 0 == port) {
+		if (null == IP || 0 == PORT) {
 			Util.loger(" Need ip and/or port to connect");
 			System.exit(-1);
 			;
 		}
 
 		socketChannel = SocketChannel.open();
-		socketChannel.connect(new InetSocketAddress(ip, port));
+		socketChannel.connect(new InetSocketAddress(IP, PORT));
 
-		Util.loger("Connected to: \t" + ip);
+		Util.loger("Connected to: \t" + IP);
 
 	}
 
@@ -97,6 +105,8 @@ public class SuperClient implements Runnable {
 			String mesgToSend = " Send from " + tName + Util.bigMsg(BUFFER_SIZE);
 
 			this.send("Length:" + mesgToSend.length() + mesgToSend);
+			
+			Util.setTimer(TTL);
 
 		} catch (IOException e) {
 			// TODO Auto-generated catch block

@@ -12,71 +12,64 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-
-
 /**
  * Java NIO uses multiplexing to server multiple clients from the same thread.
  * Before NIO, a server had to open a thread for each client.
  * 
  * @author john @2018-01-31
  * 
- * @@todo: 1) hashmap could be bottleneck, is it thread-safe?  Not Need as only one thread to read/write
- * 		   2) JVM tunning 
- * 		   3) ip stack tuning for linux kernel
+ * @@todo: 1) hashmap could be bottleneck, is it thread-safe? Not Need as only
+ *         one thread to read/write 2) JVM tunning 3) ip stack tuning for linux
+ *         kernel
  * 
  *
- *Howto:
- *1) Epoll 
-  	java -Djava.nio.channels.spi.SelectorProvider=sun.nio.ch.EPollSelectorProvider 
- *2) Poll
-	java -Djava.nio.channels.spi.SelectorProvider=sun.nio.ch.PollSelectorProvider 
-
+ *         Howto: 1) Epoll java
+ *         -Djava.nio.channels.spi.SelectorProvider=sun.nio.ch.EPollSelectorProvider
+ *         2) Poll java
+ *         -Djava.nio.channels.spi.SelectorProvider=sun.nio.ch.PollSelectorProvider
+ * 
  */
 public class EPollServer implements Runnable {
 
-	 static String ADDRESS = "localhost";
-	 static int PORT = 8511;
+	static String ADDRESS = "localhost";
+	static int PORT = 8511;
 	public final static long SELECT_TIMEOUT = 10000;
 
-	static int BUFFER_SIZE=1024*51;
-	static int THREADNUM=1;
+	static int BUFFER_SIZE = 1024 * 51;
+	static int THREADNUM = 1;
 
-static int counter;
+	static int counter;
 
 	private ServerSocketChannel serverChannel;
 	private Selector selector;
 
 	private Map<SocketChannel, byte[]> mesgCache = new HashMap<SocketChannel, byte[]>();
-	
+
 	public EPollServer() {
-		
+
 	}
 
 	public static void main(String[] args) {
-		
-		execute(ADDRESS, PORT,BUFFER_SIZE,THREADNUM);
+
+		execute(ADDRESS, PORT, BUFFER_SIZE, THREADNUM);
 	}
-	
-	public static void execute(String ip, int port, int buffer,int threadNum) {
-    	
-    	EPollServer ss = new EPollServer(); 
-    	ss.init(ip, port);
-    	BUFFER_SIZE=buffer;
-    	
-    	Util.loger("The select server is starting on port:"+port);
-    	Util.loger("The provier is \t"+getProvider());
-    
-    	
-    	for ( int i=1; i<=threadNum; i++) {
-			Thread sstt = new Thread (ss,"SelectServerThread-"+i);
-	    	sstt.start();
-		} 
-    	
-    
-    		Util.loger("threadNum is "+threadNum);
-    		
-    		
-    	   	
+
+	public static void execute(String ip, int port, int buffer, int threadNum) {
+
+		EPollServer ss = new EPollServer();
+		ss.init(ip, port);
+		BUFFER_SIZE = buffer;
+
+		Util.loger("The EPoll server is starting on port:" + port);
+		Util.loger("The provier is \t" + getProvider());
+
+		for (int i = 1; i <= threadNum; i++) {
+			Thread sstt = new Thread(ss, "SelectServerThread-" + i);
+			sstt.start();
+		}
+
+		Util.loger("threadNum is " + threadNum);
+
 	}
 
 	private void init(String ip, int port) {
@@ -106,10 +99,10 @@ static int counter;
 
 	@Override
 	public void run() {
-		Util.loger("Now accepting connections by..."+ Thread.currentThread().getName() );
+		Util.loger("Now accepting connections by..." + Thread.currentThread().getName());
 
-counter++;
-Util.loger("Connection Counter is::"+ counter);
+		counter++;
+		Util.loger("Connection Counter is::" + counter);
 		try {
 
 			while (!Thread.currentThread().isInterrupted()) {
@@ -153,8 +146,7 @@ Util.loger("Connection Counter is::"+ counter);
 		}
 
 	}
-	
-	
+
 	private void accept(SelectionKey key) throws IOException {
 		ServerSocketChannel serverSocketChannel = (ServerSocketChannel) key.channel();
 		SocketChannel socketChannel = serverSocketChannel.accept();
@@ -166,20 +158,19 @@ Util.loger("Connection Counter is::"+ counter);
 	}
 
 	/**
-	 * SocketChannel receiving back from the key.channel() is the same channel that was
-	 * used to register the selector in the accept() method.
-	 *  later, we might register to write from the read() method (for  example).
+	 * SocketChannel receiving back from the key.channel() is the same channel that
+	 * was used to register the selector in the accept() method. later, we might
+	 * register to write from the read() method (for example).
 	 */
 	private void write(SelectionKey key) throws IOException {
 		SocketChannel channel = (SocketChannel) key.channel();
-		
+
 		byte[] data = mesgCache.get(channel);
 		mesgCache.remove(channel);
 
-		
 		channel.write(ByteBuffer.wrap(data));
- Util.loger("Data write out is:"+new String(data));
-		
+		Util.loger("Data write out is:" + new String(data));
+
 		key.interestOps(SelectionKey.OP_READ);
 
 	}
@@ -196,7 +187,6 @@ Util.loger("Connection Counter is::"+ counter);
 			}
 		}
 	}
-
 
 	private void read(SelectionKey key) throws IOException {
 		SocketChannel channel = (SocketChannel) key.channel();
@@ -217,7 +207,7 @@ Util.loger("Connection Counter is::"+ counter);
 			key.cancel();
 			return;
 		}
-	
+
 		readBuffer.flip();
 
 		byte[] data = new byte[BUFFER_SIZE];
@@ -226,14 +216,14 @@ Util.loger("Connection Counter is::"+ counter);
 
 		readBuffer.get(data, 0, read);
 
-//		Util.loger("Received: " + new String(data));
+		// Util.loger("Received: " + new String(data));
 
 		echo(key, data);
 	}
 
 	/**
 	 * Channel is a two way communication linked with Buffer .
-
+	 * 
 	 */
 
 	private void echo(SelectionKey key, byte[] data) {
@@ -247,7 +237,6 @@ Util.loger("Connection Counter is::"+ counter);
 		String rst;
 		rst = java.nio.channels.spi.SelectorProvider.provider().getClass().getName();
 		return rst;
-
 
 	}
 
