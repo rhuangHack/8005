@@ -1,0 +1,26 @@
+plan:
+
+data collection:
+
+response time : get from server side program, try to trigger a function by connection mod 1000 get 0; the function would collect 100 samples of response time from runing connctions;
+				consider multithread server's archetecture is much different from epoll or poll server, so there should have two solution for getting these data:
+				for epoll & poll ---- just at timers before and after the business logic, and set a variable named connections, when this variable mod 1000 is 0, we trigger this function;
+				for multi-thread ---- we need to clear all output first, then add a switch when connections mod 1000 is 0, it inform the next 100 new connctions to print the response time once;
+
+rtt : I can get the data from wireshark, but it seems like not that valuable in this report, it just proof the network is fine or not(since our lab, so we can suppose it is fine all the time)
+
+conn-throughput: I can get the data by using command "cat /sys/class/net/your_nic/statistics/xxx"; so I can write a shell script to catch these real time data and redirect to a file
+
+conn-cpu: 	if I just wanna get the stop point one, I can just using perf stat + set the max connection at the client side to do it; while if I wanna real time data about cpu, I need to pick some valuable
+			variables to catch, the posible tools may be iostat, uptime, sar or combine of perf, grep, awk, sed or so. 
+			
+			so make sure the data I want first!!! maybe workload is the thing I want "w"
+
+conn-mem:	similar to cpu situation, I can use vmstat or top like tools to output data, but first thing first is clear what data is most valuable for me;
+			
+			so make sure the data I want first!!! maybe pmap -d PID is want I want
+
+
+
+in step one, I just catch the perf stat data at the end of each attemp;
+in step two, I will try perf record and report to see if I can get something interesting, but this should begin after documentation finish 90%+
