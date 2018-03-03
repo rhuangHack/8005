@@ -24,3 +24,8 @@ conn-mem:	similar to cpu situation, I can use vmstat or top like tools to output
 
 in step one, I just catch the perf stat data at the end of each attemp;
 in step two, I will try perf record and report to see if I can get something interesting, but this should begin after documentation finish 90%+
+
+data has two parts, one is for test cases; one is for report;
+
+for report: I plan get connection of 1000, 2000, 4000, 8000, 15000, 30000, 60000, 100000
+the very important part is respond time, it is from server program, not monitor tools
