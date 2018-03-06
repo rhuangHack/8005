@@ -14,12 +14,11 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 2018-03-03: adding AvgTime( print avg every 1000 in Nanos->Ms), supress other
- * output. 
- * 2018-02-24:@0224 calling tasks ( CPUTask and IOTask) 
- * 2018-01-12
+ * 2018-03-03: adding AvgTime( print avg every 1000 in Nanos), supress other
+ * output. 2018-02-24:@0224 calling tasks ( CPUTask and IOTask) 2018-01-12
  * PollServer should be branched from EPoll every time EPoll update Provide the
  * PollServer, which is pretty much same as EPollServer. But due to
  * unfortunately the lower layer issue at PollSelectProvider, which caused for
@@ -42,7 +41,7 @@ import java.util.Map;
  *         -Djava.nio.channels.spi.SelectorProvider=sun.nio.ch.PollSelectorProvider
  * 
  */
-public class EPollServer implements Runnable {
+public class PollServer implements Runnable {
 
 	static String ADDRESS = "192.168.0.15";// should be useless
 	static int PORT = 8511;
@@ -60,11 +59,11 @@ public class EPollServer implements Runnable {
 	private ServerSocketChannel serverChannel;
 	private Selector selector;
 
-	private Map<SocketChannel, byte[]> mesgCache = new HashMap<SocketChannel, byte[]>();
+	private ConcurrentHashMap<SocketChannel, byte[]> mesgCache = new ConcurrentHashMap<SocketChannel, byte[]>();
 
 	PrintWriter pwr;
 
-	public EPollServer() {
+	public PollServer() {
 
 	}
 
@@ -90,7 +89,7 @@ public class EPollServer implements Runnable {
 
 	public static void execute(String ip, int port, int buffer, int threadNum) {
 
-		EPollServer ss = new EPollServer();
+		PollServer ss = new PollServer();
 		ss.init(ip, port);
 		BUFFER_SIZE = buffer;
 
