@@ -1,0 +1,15 @@
+problem:
+
+connection switch:
+when different user come in, obviously this connection would not be the current one, so it would require the working function switch to the right connction file descriptor;
+
+make both socket pair:
+when we try to allow multi-user to access the port forwarding server, that means more then one pair of sockets would coming, and how to know which one would transfer data to which one else. so currently , I want to use dictionary to pair the sockets one of them be the key and other be the value, the thing I m worried about is the matching time. would it will be so long to lower the preformance of the server
+
+connection register:
+right now, my solution use loop to lock the sockets pair together, while new socket comie in, they would not go into accept function but run the transfer function directly and cause server crush, my solution may move the regiester function "accept" to transfer function, the exception part to try.
+
+last solution:
+if these solution all faild, I ll move to muliti-thread version to save redline
+
+port list use " " as spliter
