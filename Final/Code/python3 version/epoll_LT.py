@@ -47,7 +47,8 @@ def rSock(conn):
 
 
 # disconnect the link and delete all the socket related objects
-def disconn(local, remote, myselect):
+def disconn(local, remote):
+    global myselect
     global sock_pairs
     try:
         myselect.unregister(local)
@@ -64,35 +65,36 @@ def disconn(local, remote, myselect):
 
 
 # main business logic: receving data from one socket and sending data from another socket
-def datatrans(myselect):
+def datatrans(sock, mask):
     global sock_pairs
+    global myselect
 
-    while keep_running:
+   # while keep_running:
         #print('[.] waiting for events ..............heart beat')
 
-        for key, mask in myselect.select(timeout=1):
-            connection = key.fileobj
+    for key, mask in myselect.select(timeout=1):
+        connection = key.fileobj
 
-            try:
-                client_address = connection.getpeername()
-            except:
-                accept(connection, mask)
-                return
-            remote = sock_pairs.get(connection)
+        try:
+            client_address = connection.getpeername()
+        except:
+            accept(connection, mask)
+            return
+        remote = sock_pairs.get(connection)
 
-            l_addr = connection.getsockname()[0]
-            l_port = connection.getsockname()[1]
-            r_addr = remote.getsockname()[0]
-            r_port = remote.getsockname()[1]
+        l_addr = connection.getsockname()[0]
+        l_port = connection.getsockname()[1]
+        r_addr = remote.getsockname()[0]
+        r_port = remote.getsockname()[1]
 
-            data = connection.recv(1024)
-            if len(data) == 0:
-                print( "[-] No data received! Breaking...")
-                disconn(connection, remote, myselect)
-                continue
+        data = connection.recv(1024)
+        if len(data) == 0:
+            print( "[-] No data received! Breaking...")
+            disconn(connection, remote)
+            continue
 
-            print("[+] %s ---------> %s:%d >>>>>> %s:%d data length [%d]" % (client_address, l_addr, l_port, r_addr, r_port, len(data)))
-            remote.sendall(data)
+        print("[+] %s ---------> %s:%d >>>>>> %s:%d data length [%d]" % (client_address, l_addr, l_port, r_addr, r_port, len(data)))
+        remote.sendall(data)
 
 
 # accept the new connection, and register these new socket to selector
@@ -110,9 +112,8 @@ def accept(sock, mask):
     else:
         sock_pairs.update({local:remote, remote:local})
         print("[+] updated socket pairs to %d : %s" % (len(sock_pairs), sock_pairs))
-        myselect.register(local, selectors.EVENT_READ,)
-        myselect.register(remote, selectors.EVENT_READ,)
-    datatrans(myselect)
+        myselect.register(local, selectors.EVENT_READ, datatrans)
+        myselect.register(remote, selectors.EVENT_READ, datatrans)
 
 
 # listening for the Ctrl + C interrupt and stop the server
