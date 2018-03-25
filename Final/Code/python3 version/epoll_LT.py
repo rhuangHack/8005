@@ -5,6 +5,7 @@ import socket
 import sys
 import logging
 import os
+import errno
 
 logging.basicConfig(filename='./proxy.log', filemode='w', level=logging.INFO, format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M:%S')
 
@@ -41,6 +42,7 @@ def rSock(conn):
     rserver = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
         rserver.connect((rserver_addr, rserver_port))
+        #rserver.setblocking(False)
     except OSError as e:
         return
     return rserver
@@ -101,7 +103,16 @@ def datatrans(sock, mask):
 def accept(sock, mask):
     "Callback for new connections"
     global sock_pairs
-    local, addr = sock.accept()
+    try:
+        local, addr = sock.accept()
+    except BlockingIOError as e:
+        if e.errno == 11:
+            print("[-] BlockingIOException Resource temporarily unavailable")
+            return;
+        else:
+            print(e)
+            sys.exit(0)
+
     print('[+] accept({})'.format(addr))
     global total_conn
     total_conn += 1
@@ -111,7 +122,7 @@ def accept(sock, mask):
         local.close()
     else:
         sock_pairs.update({local:remote, remote:local})
-        print("[+] updated socket pairs to %d : %s" % (len(sock_pairs), sock_pairs))
+        print("[+] updated socket pairs to %d " % len(sock_pairs))
         myselect.register(local, selectors.EVENT_READ, datatrans)
         myselect.register(remote, selectors.EVENT_READ, datatrans)
 
